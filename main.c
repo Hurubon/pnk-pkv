@@ -34,7 +34,7 @@ void process(AVFrame* source_frame)
     {
         for (int col = 0; col < scaled_frame->width; ++col)
         {
-            int const y = scaled_frame->data[0][row * scaled_frame->linesize[0] + col];
+            int const y = scaled_frame->data[0][row * scaled_frame->linesize[0] + 2 * col];
             printf("\e[38;2;%d;%d;%dm%c\e[0m", y, y, y, luma_to_ascii_lut[y / 27]);
         }
         puts("");
