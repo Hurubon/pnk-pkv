@@ -263,24 +263,15 @@ char const* lookup[] =
 
 int main(void)
 {
-    char buffer[25] = "\e[38;2;";
-    int   written = 0;
-    
-    for (int i = 0; i < 256; ++i)
+    for (unsigned char i = 0; i < 216; ++i)
     {
-        char* pointer = buffer + 7;
-        memcpy(pointer, lookup[i], 2 + (i > 9) + (i > 99));
-        pointer += 2 + (i > 9) + (i > 99);
-        memcpy(pointer, lookup[i], 2 + (i > 9) + (i > 99));
-        pointer += 2 + (i > 9) + (i > 99);
-        memcpy(pointer, lookup[i], 2 + (i > 9) + (i > 99));
-        pointer += 2 + (i > 9) + (i > 99);
-
-        pointer[-1] = 'm';
-
-        memcpy(pointer, "$\e[0m\0", 6);
-        pointer += 6;
-
-        printf("%d ", (int) (pointer - buffer)); puts(buffer);
+        unsigned char const g = (i & 0xE0) >> 5;
+        unsigned char const r = (i & 0x1C) >> 2;
+        unsigned char const b = (i & 0x03);
+        printf("\e[38;5;%dm$\e[0m ", i + 16);
+        if ((i + 1) % 36 == 0)
+        {
+            puts("");
+        }
     }
 }

@@ -1,6 +1,7 @@
 #ifndef PNK_MEDIA_FACADE_HEADER
 #define PNK_MEDIA_FACADE_HEADER
 
+#include <libswscale/swscale.h>
 #include <libavutil/imgutils.h>
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
