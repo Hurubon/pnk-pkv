@@ -1,0 +1,4 @@
+ConPTY passthrough https://github.com/microsoft/terminal/issues/1173
+ConPTY refactoring https://github.com/microsoft/terminal/pull/17510
+
+https://stackoverflow.com/questions/4842424/list-of-ansi-color-escape-sequences

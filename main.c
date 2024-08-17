@@ -1,4 +1,5 @@
 #include <stdio.h>
+/* #include <io.h> */
 
 #include <libswscale/swscale.h>
 
@@ -7,11 +8,9 @@
 
 enum
 {
-    IMAGE_W = 192 * 2,
-    IMAGE_H = 108,
+    IMAGE_W = 192,
+    IMAGE_H = 54,
 };
-
-char const luma_to_ascii_lut[] = "_.,-=+:;cba!?0123456789#$W@";
 
 char const* lookup[] =
 {
@@ -274,7 +273,7 @@ char const* lookup[] =
 };
 
 /* 24 bytes per pixel + 1 byte per row for newline + 3 bytes for \e[H + \0 */
-char frame_buffer[IMAGE_W * IMAGE_H * 24 + 108 + 4];
+_Alignas(4096) char frame_buffer[IMAGE_W * IMAGE_H * 24 + 108 + 4];
 
 void process(AVFrame* source_frame)
 {
@@ -327,6 +326,8 @@ void process(AVFrame* source_frame)
     }
     memcpy(pointer, "\e[H\0", 4);
     pointer += 4;
+    
+    // _write(1, frame_buffer, (unsigned int) (pointer - frame_buffer));
     fwrite(frame_buffer, 1, pointer - frame_buffer, stdout);
     fflush(stdout);
     
@@ -337,7 +338,7 @@ void process(AVFrame* source_frame)
 
 int main(int argc, char* argv[])
 {
-    setvbuf(stdout, NULL, _IOFBF, 65536ull);
+    setvbuf(stdout, NULL, _IOFBF, 1ull < 17);
 
     PNK_Media const media = pnk_media_acquire(argv[1]);
     PNK_Codec const codec = pnk_media_find_best_video_stream(media, PNK_MEDIA_UNRELATED);
