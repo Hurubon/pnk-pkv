@@ -339,10 +339,12 @@ static void process(AVFrame* source_frame)
 
 int main(int argc, char* argv[])
 {
-    setvbuf(stdout, NULL, _IOFBF, 1ull < 15);
+    setvbuf(stdout, NULL, _IOFBF, 1ull << 15);
 
     PNK_Media const media = pnk_media_acquire(argv[1]);
     PNK_Codec const codec = pnk_media_find_best_video_stream(media, PNK_MEDIA_UNRELATED);
+
+    printf("\e[?25l");
 
     int const result = pnk_media_decode_and_process(media, codec, process);
     
