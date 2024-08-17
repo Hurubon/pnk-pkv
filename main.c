@@ -7,7 +7,7 @@
 
 enum
 {
-    IMAGE_W = 192,
+    IMAGE_W = 192 * 2,
     IMAGE_H = 108,
 };
 
@@ -282,7 +282,7 @@ void process(AVFrame* source_frame)
 
     scaled_frame->width  = IMAGE_W;
     scaled_frame->height = IMAGE_H;
-    scaled_frame->format = source_frame->format;
+    scaled_frame->format = AV_PIX_FMT_RGB24;
 
     struct SwsContext* sws_context = sws_getContext(
         source_frame->width, source_frame->height, source_frame->format,
@@ -305,27 +305,26 @@ void process(AVFrame* source_frame)
     {
         for (int col = 0; col < scaled_frame->width; ++col)
         {
-            int const y = scaled_frame->data[0][row * scaled_frame->linesize[0] + 2 * col];
-            // printf("\e[38;2;%d;%d;%dm%c\e[0m", y, y, y, luma_to_ascii_lut[y / 27]);
+            int const r = scaled_frame->data[0][row * scaled_frame->linesize[0] + 3 * col + 0];
+            int const g = scaled_frame->data[0][row * scaled_frame->linesize[0] + 3 * col + 1];
+            int const b = scaled_frame->data[0][row * scaled_frame->linesize[0] + 3 * col + 2];
 
             memcpy(pointer, "\e[38;2;", 7);
             pointer += 7;
-            memcpy(pointer, lookup[y], 2 + (y > 9) + (y > 99));
-            pointer += 2 + (y > 9) + (y > 99);
-            memcpy(pointer, lookup[y], 2 + (y > 9) + (y > 99));
-            pointer += 2 + (y > 9) + (y > 99);
-            memcpy(pointer, lookup[y], 2 + (y > 9) + (y > 99));
-            pointer += 2 + (y > 9) + (y > 99);
+            memcpy(pointer, lookup[r], 2 + (r > 9) + (r > 99));
+            pointer += 2 + (r > 9) + (r > 99);
+            memcpy(pointer, lookup[g], 2 + (g > 9) + (g > 99));
+            pointer += 2 + (g > 9) + (g > 99);
+            memcpy(pointer, lookup[b], 2 + (b > 9) + (b > 99));
+            pointer += 2 + (b > 9) + (b > 99);
 
             pointer[-1] = 'm';
 
             memcpy(pointer, "$\e[0m", 5);
             pointer += 5;
-
         }
         *pointer++ = '\n';
     }
-    // printf("\e[H");
     memcpy(pointer, "\e[H\0", 4);
     pointer += 4;
     fwrite(frame_buffer, 1, pointer - frame_buffer, stdout);
