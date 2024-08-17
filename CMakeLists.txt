@@ -11,3 +11,5 @@ target_include_directories(pkv PRIVATE lib)
 
 target_link_directories(pkv PRIVATE lib/ffmpeg/lib)
 target_link_libraries  (pkv PRIVATE avformat avcodec avutil swscale)
+
+add_executable(scratch scratchpad.c)

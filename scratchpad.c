@@ -1,17 +1,5 @@
 #include <stdio.h>
-
-#include <libswscale/swscale.h>
-
-#define PNK_MEDIA_FACADE_SOURCE
-#include <pnk/media_facade.h>
-
-enum
-{
-    IMAGE_W = 192,
-    IMAGE_H = 108,
-};
-
-char const luma_to_ascii_lut[] = "_.,-=+:;cba!?0123456789#$W@";
+#include <string.h>
 
 char const* lookup[] =
 {
@@ -273,75 +261,26 @@ char const* lookup[] =
     "255;",
 };
 
-/* 24 bytes per pixel + 1 byte per row for newline + 3 bytes for \e[H + \0 */
-char frame_buffer[IMAGE_W * IMAGE_H * 24 + 108 + 4];
-
-void process(AVFrame* source_frame)
+int main(void)
 {
-    AVFrame* scaled_frame = av_frame_alloc();
-
-    scaled_frame->width  = IMAGE_W;
-    scaled_frame->height = IMAGE_H;
-    scaled_frame->format = source_frame->format;
-
-    struct SwsContext* sws_context = sws_getContext(
-        source_frame->width, source_frame->height, source_frame->format,
-        scaled_frame->width, scaled_frame->height, scaled_frame->format,
-        SWS_LANCZOS, NULL, NULL, NULL);
-
-    av_image_alloc(
-        scaled_frame->data, scaled_frame->linesize,
-        scaled_frame->width, scaled_frame->height,
-        scaled_frame->format, 4096);
+    char buffer[25] = "\e[38;2;";
+    int   written = 0;
     
-    sws_scale(sws_context,
-        (uint8_t const* const*)
-        source_frame->data, source_frame->linesize, 0, source_frame->height,
-        scaled_frame->data, scaled_frame->linesize);
-
-    char* pointer = frame_buffer;
-        
-    for (int row = 0; row < scaled_frame->height; ++row)
+    for (int i = 0; i < 256; ++i)
     {
-        for (int col = 0; col < scaled_frame->width; ++col)
-        {
-            int const y = scaled_frame->data[0][row * scaled_frame->linesize[0] + 2 * col];
-            // printf("\e[38;2;%d;%d;%dm%c\e[0m", y, y, y, luma_to_ascii_lut[y / 27]);
+        char* pointer = buffer + 7;
+        memcpy(pointer, lookup[i], 2 + (i > 9) + (i > 99));
+        pointer += 2 + (i > 9) + (i > 99);
+        memcpy(pointer, lookup[i], 2 + (i > 9) + (i > 99));
+        pointer += 2 + (i > 9) + (i > 99);
+        memcpy(pointer, lookup[i], 2 + (i > 9) + (i > 99));
+        pointer += 2 + (i > 9) + (i > 99);
 
-            memcpy(pointer, "\e[38;2;", 7);
-            pointer += 7;
-            memcpy(pointer, lookup[y], 2 + (y > 9) + (y > 99));
-            pointer += 2 + (y > 9) + (y > 99);
-            memcpy(pointer, lookup[y], 2 + (y > 9) + (y > 99));
-            pointer += 2 + (y > 9) + (y > 99);
-            memcpy(pointer, lookup[y], 2 + (y > 9) + (y > 99));
-            pointer += 2 + (y > 9) + (y > 99);
+        pointer[-1] = 'm';
 
-            pointer[-1] = 'm';
+        memcpy(pointer, "$\e[0m\0", 6);
+        pointer += 6;
 
-            memcpy(pointer, "$\e[0m", 5);
-            pointer += 5;
-
-        }
-        *pointer++ = '\n';
+        printf("%d ", (int) (pointer - buffer)); puts(buffer);
     }
-    // printf("\e[H");
-    memcpy(pointer, "\e[H\0", 4);
-    pointer += 4;
-    fwrite(frame_buffer, 1, pointer - frame_buffer, stdout);
-    fflush(stdout);
-    
-    av_freep(&scaled_frame->data[0]);
-    av_frame_free(&scaled_frame);
-    sws_freeContext(sws_context);
-}
-
-int main(int argc, char* argv[])
-{
-    PNK_Media const media = pnk_media_acquire(argv[1]);
-    PNK_Codec const codec = pnk_media_find_best_video_stream(media, PNK_MEDIA_UNRELATED);
-
-    int const result = pnk_media_decode_and_process(media, codec, process);
-    
-    pnk_media_release(media);
 }
