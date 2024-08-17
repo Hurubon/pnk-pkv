@@ -2,3 +2,5 @@ ConPTY passthrough https://github.com/microsoft/terminal/issues/1173
 ConPTY refactoring https://github.com/microsoft/terminal/pull/17510
 
 https://stackoverflow.com/questions/4842424/list-of-ansi-color-escape-sequences
+Character pallette by Ahsen Khan
+    https://stackoverflow.com/questions/30097953/ascii-art-sorting-an-array-of-ascii-characters-by-brightness-levels-c-c

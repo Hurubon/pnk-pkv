@@ -5,11 +5,13 @@
 
 enum
 {
-    IMAGE_W = 256 + 32,
+    IMAGE_W = 288,
     IMAGE_H = IMAGE_W * 9 / 32,
 };
 
-char const* lookup[] =
+char value_to_ascii_lut[] = " `.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@";
+
+char const* byte_to_string_lut[] =
 {
     "0m",
     "1m",
@@ -272,7 +274,7 @@ char const* lookup[] =
 /* 24 bytes per pixel + 1 byte per row for newline + 3 bytes for \e[H + \0 */
 _Alignas(4096) char frame_buffer[IMAGE_W * IMAGE_H * 16 + IMAGE_H + 4];
 
-void process(AVFrame* source_frame)
+static void process(AVFrame* source_frame)
 {
     AVFrame* scaled_frame = av_frame_alloc();
 
@@ -283,7 +285,7 @@ void process(AVFrame* source_frame)
     struct SwsContext* sws_context = sws_getContext(
         source_frame->width, source_frame->height, source_frame->format,
         scaled_frame->width, scaled_frame->height, scaled_frame->format,
-        SWS_FAST_BILINEAR, NULL, NULL, NULL);
+        SWS_LANCZOS, NULL, NULL, NULL);
 
     av_image_alloc(
         scaled_frame->data, scaled_frame->linesize,
@@ -301,25 +303,32 @@ void process(AVFrame* source_frame)
     {
         for (int col = 0; col < scaled_frame->width; ++col)
         {
-            int unsigned const r = scaled_frame->data[0][row * scaled_frame->linesize[0] + 3 * col + 0];
-            int unsigned const g = scaled_frame->data[0][row * scaled_frame->linesize[0] + 3 * col + 1];
-            int unsigned const b = scaled_frame->data[0][row * scaled_frame->linesize[0] + 3 * col + 2];
+            int const r = scaled_frame->data[0][row * scaled_frame->linesize[0] + 3 * col + 0];
+            int const g = scaled_frame->data[0][row * scaled_frame->linesize[0] + 3 * col + 1];
+            int const b = scaled_frame->data[0][row * scaled_frame->linesize[0] + 3 * col + 2];
 
-            uint8_t const color = 16 + r * 5 / 255 * 36 + g * 5 / 255 * 6 + b * 5 / 255;
+            int const value = (r + g + b) / 3;
+
+            int const r0_5 = r * 5 / 255;
+            int const g0_5 = g * 5 / 255;
+            int const b0_5 = b * 5 / 255;
+
+            int const color_code = 16 + 36 * r0_5 + 6 * g0_5 + b0_5;
 
             memcpy(pointer, "\e[38;5;", 7);
             pointer += 7;
-            memcpy(pointer, lookup[color], 3 + (color >= 100));
-            pointer += 3 + (color >= 100);
-            memcpy(pointer, "$\e[0m", 5);
-            pointer += 5;
+            memcpy(pointer, byte_to_string_lut[color_code], 3 + (color_code >= 100));
+            pointer += 3 + (color_code >= 100);
+            *pointer++ = value_to_ascii_lut[value * 92 / 255];
+            // *pointer++ = '#';
+            memcpy(pointer, "\e[0m", 4);
+            pointer += 4;
         }
         *pointer++ = '\n';
     }
     memcpy(pointer, "\e[H\0", 4);
     pointer += 4;
     
-    // _write(1, frame_buffer, (unsigned int) (pointer - frame_buffer));
     fwrite(frame_buffer, 1, pointer - frame_buffer, stdout);
     fflush(stdout);
     
