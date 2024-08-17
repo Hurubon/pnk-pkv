@@ -337,6 +337,8 @@ void process(AVFrame* source_frame)
 
 int main(int argc, char* argv[])
 {
+    setvbuf(stdout, NULL, _IOFBF, sizeof frame_buffer);
+
     PNK_Media const media = pnk_media_acquire(argv[1]);
     PNK_Codec const codec = pnk_media_find_best_video_stream(media, PNK_MEDIA_UNRELATED);
 
