@@ -5,7 +5,7 @@
 
 enum
 {
-    IMAGE_W = 480,
+    IMAGE_W = 240,
     IMAGE_H = IMAGE_W * 9 / 32,
 };
 
