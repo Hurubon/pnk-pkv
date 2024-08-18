@@ -9,7 +9,7 @@ enum
     IMAGE_H = IMAGE_W * 9 / 32,
 };
 
-char value_to_ascii_lut[] = " `.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@";
+char value_to_ascii_lut[] = " `.,:;'-_^=><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@";
 
 char const* byte_to_string_lut[] =
 {
@@ -271,7 +271,7 @@ char const* byte_to_string_lut[] =
     "255m",
 };
 
-/* 24 bytes per pixel + 1 byte per row for newline + 3 bytes for \e[H + \0 */
+/* 16 bytes per pixel + 1 byte per row for newline + 3 bytes for \e[H + \0 */
 _Alignas(4096) char frame_buffer[IMAGE_W * IMAGE_H * 16 + IMAGE_H + 4];
 
 static void process(AVFrame* source_frame)
