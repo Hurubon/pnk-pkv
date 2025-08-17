@@ -5,6 +5,24 @@ add_executable(pkv main.c)
 
 target_compile_features(pkv PRIVATE c_std_23)
 
+if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(pkv PRIVATE
+        -pedantic
+        -Wall
+        -Wextra
+        -Werror
+        -Wpedantic
+        # -Wconversion (too many errors from FFmpeg)
+        -Wshadow
+        -Wstrict-prototypes
+        -Wformat=2
+        -Wundef
+        -Wcast-qual
+        -Wpointer-arith
+        -Wwrite-strings
+        -Wswitch-enum)
+endif ()
+
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(AVFORMAT REQUIRED libavformat)
 pkg_check_modules(AVCODEC  REQUIRED libavcodec)
