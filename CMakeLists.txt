@@ -20,7 +20,9 @@ if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
         -Wcast-qual
         -Wpointer-arith
         -Wwrite-strings
-        -Wswitch-enum)
+        -Wswitch-enum
+        
+        -Wno-char-subscripts)
 endif ()
 
 find_package(PkgConfig REQUIRED)

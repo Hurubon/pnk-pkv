@@ -15,13 +15,81 @@ typedef struct ScalingContext {
     AVFrame*           scaled_frame;
 } ScalingContext;
 
-
 // 24 bytes per pixel + 1 byte per row for newline + 3 bytes for \u001B[H + \0.
 constexpr int RESOLUTION_W = 384;
 constexpr int RESOLUTION_H = 108;
 char frame_buffer[(RESOLUTION_W + 1) * RESOLUTION_H * 24 + 4];
 
-constexpr char lookup[] = " .`:_;!\"</*|xYr{jeySkUK6GD8&BWQ@";
+constexpr char characters[] =
+    " .`':_;^!~\"<>/\\=*?|vLxTlYzrinJjFIeVXyZSh4kUwP5KbmH9%GO#80gMBW$Q@";
+
+[[maybe_unused]]
+static float const densities[128] = {
+    ['\''] = 0.0516,
+    [' '] = 0.0000,
+    ['!'] = 0.0964,
+    ['"'] = 0.1032,
+    ['#'] = 0.2742,
+    ['$'] = 0.3076,
+    ['%'] = 0.2581,
+    ['*'] = 0.1507,
+    ['.'] = 0.0277,
+    ['/'] = 0.1445,
+    ['0'] = 0.2831,
+    ['4'] = 0.2310,
+    ['5'] = 0.2445,
+    ['8'] = 0.2808,
+    ['9'] = 0.2569,
+    [':'] = 0.0553,
+    [';'] = 0.0831,
+    ['<'] = 0.1360,
+    ['='] = 0.1460,
+    ['>'] = 0.1388,
+    ['?'] = 0.1539,
+    ['@'] = 0.3310,
+    ['B'] = 0.2989,
+    ['F'] = 0.2016,
+    ['G'] = 0.2631,
+    ['H'] = 0.2548,
+    ['I'] = 0.2035,
+    ['J'] = 0.1935,
+    ['K'] = 0.2499,
+    ['L'] = 0.1627,
+    ['M'] = 0.2923,
+    ['O'] = 0.2678,
+    ['P'] = 0.2425,
+    ['Q'] = 0.3154,
+    ['S'] = 0.2264,
+    ['T'] = 0.1693,
+    ['U'] = 0.2401,
+    ['V'] = 0.2144,
+    ['W'] = 0.3050,
+    ['X'] = 0.2173,
+    ['Y'] = 0.1761,
+    ['Z'] = 0.2212,
+    ['\\'] = 0.1445,
+    ['^'] = 0.0866,
+    ['_'] = 0.0723,
+    ['`'] = 0.0476,
+    ['b'] = 0.2520,
+    ['e'] = 0.2121,
+    ['g'] = 0.2898,
+    ['h'] = 0.2278,
+    ['i'] = 0.1879,
+    ['j'] = 0.1995,
+    ['k'] = 0.2339,
+    ['l'] = 0.1707,
+    ['m'] = 0.2535,
+    ['n'] = 0.1921,
+    ['r'] = 0.1824,
+    ['v'] = 0.1609,
+    ['w'] = 0.2407,
+    ['x'] = 0.1674,
+    ['y'] = 0.2189,
+    ['z'] = 0.1811,
+    ['|'] = 0.1588,
+    ['~'] = 0.1015,
+};
 
 void callback(
     AVFrame* const source_frame,
@@ -43,23 +111,23 @@ void callback(
     {
         for (int col = 0; col < scaled_frame->width; col += 1)
         {
-            int const r = scaled_frame
+            auto const r = scaled_frame
                 ->data[0][row * scaled_frame->linesize[0] + 3 * col + 0];
-            int const g = scaled_frame
+            auto const g = scaled_frame
                 ->data[0][row * scaled_frame->linesize[0] + 3 * col + 1];
-            int const b = scaled_frame
+            auto const b = scaled_frame
                 ->data[0][row * scaled_frame->linesize[0] + 3 * col + 2];
 
             // https://en.wikipedia.org/wiki/Rec._709
-            float const luma = lround(0.2126*r + 0.7152*g + 0.0722*b) / 255.0f;
-
-            auto const character_index = lround((sizeof lookup - 1) * luma);
+            auto const luma = lround(0.2126*r + 0.7152*g + 0.0722*b) / 255.0f;
+            auto const symb = characters[lround((sizeof characters - 1) * luma)];
 
             pointer += sprintf(pointer, "\u001B[38;2;%d;%d;%dm%c\u001B[0m",
-                r, g, b, lookup[character_index]);
+                r, g, b, symb);
         }
         *pointer++ = '\n';
     }
+    
     pointer += sprintf(pointer, "\u001b[H");
     
     fwrite(frame_buffer, 1, pointer - frame_buffer, stdout);
