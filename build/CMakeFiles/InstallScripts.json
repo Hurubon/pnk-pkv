@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/dev/pnk-pkv/build/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

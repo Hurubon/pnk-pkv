@@ -1,0 +1,3 @@
+C:/dev/pnk-pkv/build/CMakeFiles/pkv.dir
+C:/dev/pnk-pkv/build/CMakeFiles/edit_cache.dir
+C:/dev/pnk-pkv/build/CMakeFiles/rebuild_cache.dir

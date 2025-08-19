@@ -9,6 +9,7 @@
 
 #define PNK_MEDIA_FACADE_SOURCE
 #include <pnk/media_facade.h>
+#include <pnk/c23_compatibility.h>
 
 typedef struct ScalingContext {
     struct SwsContext* sws_context;
@@ -16,14 +17,16 @@ typedef struct ScalingContext {
 } ScalingContext;
 
 // 24 bytes per pixel + 1 byte per row for newline + 3 bytes for \u001B[H + \0.
-constexpr int RESOLUTION_W = 384;
-constexpr int RESOLUTION_H = 108;
-char frame_buffer[(RESOLUTION_W + 1) * RESOLUTION_H * 24 + 4];
+enum {
+    RESOLUTION_W = 384,
+    RESOLUTION_H = 108
+};
+static char frame_buffer[(RESOLUTION_W + 1) * RESOLUTION_H * 24 + 3 + 1];
 
-constexpr char characters[] =
+static char const characters[] =
     " .`':_;^!~\"<>/\\=*?|vLxTlYzrinJjFIeVXyZSh4kUwP5KbmH9%GO#80gMBW$Q@";
 
-[[maybe_unused]]
+PNK_MAYBE_UNUSED
 static float const densities[128] = {
     ['\''] = 0.0516,
     [' '] = 0.0000,
@@ -97,8 +100,8 @@ void callback(
 {
     PnkScalingContext* const scaling_context = user_data;
 
-    auto const sws_context  = scaling_context->sws_context;
-    auto const scaled_frame = scaling_context->scaled_frame;
+    SwsContext* const sws_context  = scaling_context->sws_context;
+    AVFrame*    const scaled_frame = scaling_context->scaled_frame;
 
     sws_scale(sws_context,
         (uint8_t const* const*)
@@ -111,24 +114,23 @@ void callback(
     {
         for (int col = 0; col < scaled_frame->width; col += 1)
         {
-            auto const r = scaled_frame
+            int const r = scaled_frame
                 ->data[0][row * scaled_frame->linesize[0] + 3 * col + 0];
-            auto const g = scaled_frame
+            int const g = scaled_frame
                 ->data[0][row * scaled_frame->linesize[0] + 3 * col + 1];
-            auto const b = scaled_frame
+            int const b = scaled_frame
                 ->data[0][row * scaled_frame->linesize[0] + 3 * col + 2];
 
             // https://en.wikipedia.org/wiki/Rec._709
-            auto const luma = lround(0.2126*r + 0.7152*g + 0.0722*b) / 255.0f;
-            auto const symb = characters[lround((sizeof characters - 1) * luma)];
+            float const luma = lround(0.2126*r + 0.7152*g + 0.0722*b) / 255.0f;
 
-            pointer += sprintf(pointer, "\u001B[38;2;%d;%d;%dm%c\u001B[0m",
-                r, g, b, symb);
+            pointer += sprintf(pointer, "\x1B[38;2;%d;%d;%dm%c\x1B[0m",
+                r, g, b, characters[lround((sizeof characters - 1) * luma)]);
         }
         *pointer++ = '\n';
     }
     
-    pointer += sprintf(pointer, "\u001b[H");
+    pointer += sprintf(pointer, "\x1B[H");
     
     fwrite(frame_buffer, 1, pointer - frame_buffer, stdout);
     fflush(stdout);

@@ -5,6 +5,8 @@
 
 #include <stdint.h>
 
+#include <pnk/c23_compatibility.h>
+
 #include <libavutil/frame.h>
 #include <libavutil/pixfmt.h>
 #include <libavutil/imgutils.h>
@@ -45,20 +47,20 @@ static int                pnk_media_decode_and_process      (PnkMedia const*   r
 
 #ifdef PNK_MEDIA_FACADE_SOURCE
 
-[[nodiscard]] static
+PNK_NODISCARD static
 PnkMedia
 pnk_media_acquire(
     char const* const path)
 {
     PnkMedia media = {0};
 
-    media.error = avformat_open_input(&media.context, path, nullptr, nullptr);
+    media.error = avformat_open_input(&media.context, path, NULL, NULL);
     if (media.error < 0)
     {
         return media;
     }
     
-    media.error = avformat_find_stream_info(media.context, nullptr);
+    media.error = avformat_find_stream_info(media.context, NULL);
     if (media.error < 0)
     {
         return media;
@@ -104,7 +106,7 @@ pnk_media_release(
     avcodec_free_context(&media->audio_codec_context);
 }
 
-[[nodiscard]] static
+PNK_NODISCARD static
 PnkScalingContext
 pnk_media_scaling_context_acquire(
     PnkMedia const*    const media,
@@ -122,14 +124,14 @@ pnk_media_scaling_context_acquire(
         scaled_frame->data, scaled_frame->linesize,
         width, height, format, 1024);
 
-    struct FrameProxy {
+    typedef struct FrameProxy {
         int                width;
         int                height;
         enum AVPixelFormat format;
-    };
+    } FrameProxy;
     
     int const index = media->video_codec_index;
-    struct FrameProxy* source_frame = &(struct FrameProxy){
+    FrameProxy* source_frame = &(FrameProxy){
         .width  = media->context->streams[index]->codecpar->width,
         .height = media->context->streams[index]->codecpar->height,
         .format = media->video_codec_context->pix_fmt
@@ -138,7 +140,7 @@ pnk_media_scaling_context_acquire(
     SwsContext* sws_context = sws_getContext(
         source_frame->width, source_frame->height, source_frame->format,
         scaled_frame->width, scaled_frame->height, scaled_frame->format,
-        flags, nullptr, nullptr, nullptr);
+        flags, NULL, NULL, NULL);
     
     return (PnkScalingContext){
         .sws_context  = sws_context,
@@ -156,7 +158,7 @@ pnk_media_scaling_context_release(
     av_frame_free(&scaling_context.scaled_frame);
 }
 
-[[nodiscard]] static
+PNK_NODISCARD static
 int
 pnk_media_decode_and_process(
     PnkMedia const*   const restrict media,
@@ -164,13 +166,13 @@ pnk_media_decode_and_process(
     PnkFrameProcessor                callback)
 {
     int const video_error = avcodec_open2(
-        media->video_codec_context, media->video_codec, nullptr);
+        media->video_codec_context, media->video_codec, NULL);
     if (video_error < 0)
     {
         return video_error;
     }
     int const audio_error = avcodec_open2(
-        media->audio_codec_context, media->audio_codec, nullptr);
+        media->audio_codec_context, media->audio_codec, NULL);
     if (audio_error < 0)
     {
         return audio_error;
