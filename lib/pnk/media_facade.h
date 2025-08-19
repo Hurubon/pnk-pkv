@@ -122,14 +122,14 @@ pnk_media_scaling_context_acquire(
         scaled_frame->data, scaled_frame->linesize,
         width, height, format, 1024);
 
-    struct FrameData {
+    struct FrameProxy {
         int                width;
         int                height;
         enum AVPixelFormat format;
     };
     
     int const index = media->video_codec_index;
-    struct FrameData* source_frame = &(struct FrameData){
+    struct FrameProxy* source_frame = &(struct FrameProxy){
         .width  = media->context->streams[index]->codecpar->width,
         .height = media->context->streams[index]->codecpar->height,
         .format = media->video_codec_context->pix_fmt
