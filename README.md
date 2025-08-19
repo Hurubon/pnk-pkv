@@ -16,7 +16,7 @@ An ASCII art video player in your terminal.
 
 - [CMake](https://cmake.org/) (3.10+)
 - [FFmpeg](https://ffmpeg.org)
-- C23-compatible compiler (C11 and C17 support coming soon!)
+- C99 compatible compiler
 
 #### Building
 
