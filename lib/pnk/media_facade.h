@@ -11,7 +11,7 @@
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 
-typedef struct PNK_Media {
+typedef struct PnkMedia {
     AVFormatContext* context;
     AVCodecContext*  video_codec_context;
     AVCodecContext*  audio_codec_context;
@@ -20,37 +20,37 @@ typedef struct PNK_Media {
     int16_t          video_codec_index;
     int16_t          audio_codec_index;
     int32_t          error;
-} PNK_Media;
+} PnkMedia;
 
-typedef struct PNK_ScalingContext {
+typedef struct PnkScalingContext {
     SwsContext* sws_context;
     AVFrame*    scaled_frame;
-} PNK_ScalingContext;
+} PnkScalingContext;
 
-typedef void (*PNK_FrameProcessor)(AVFrame*, void*);
+typedef void (*PnkFrameProcessor)(AVFrame* restrict, void* restrict);
 
-static PNK_Media          pnk_media_acquire                 (char const*        path);
-static void               pnk_media_release                 (PNK_Media*         media);
-static PNK_ScalingContext pnk_media_scaling_context_acquire (PNK_Media const*   media,
-                                                             int                width,
-                                                             int                height,
-                                                             enum AVPixelFormat format,
-                                                             int                flags);
-static void               pnk_media_scaling_context_release (PNK_ScalingContext scaling_context);
-static int                pnk_media_decode_and_process      (PNK_Media const*   media,
-                                                             PNK_FrameProcessor callback,
-                                                             void*              user_data);
+static PnkMedia          pnk_media_acquire                 (char const*                 path);
+static void              pnk_media_release                 (PnkMedia*                   media);
+static PnkScalingContext pnk_media_scaling_context_acquire (PnkMedia const*             media,
+                                                            int                         width,
+                                                            int                         height,
+                                                            enum AVPixelFormat          format,
+                                                            int                         flags);
+static void               pnk_media_scaling_context_release (PnkScalingContext          scaling_context);
+static int                pnk_media_decode_and_process      (PnkMedia const*   restrict media,
+                                                             void*             restrict userdata,
+                                                             PnkFrameProcessor          callback);
 
 #endif /* PNK_MEDIA_FACADE_HEADER */
 
 #ifdef PNK_MEDIA_FACADE_SOURCE
 
 [[nodiscard]] static
-PNK_Media
+PnkMedia
 pnk_media_acquire(
     char const* const path)
 {
-    PNK_Media media = {0};
+    PnkMedia media = {0};
 
     media.error = avformat_open_input(&media.context, path, nullptr, nullptr);
     if (media.error < 0)
@@ -90,14 +90,14 @@ pnk_media_acquire(
 
     avcodec_parameters_to_context(media.video_codec_context, video_parameters);
     avcodec_parameters_to_context(media.audio_codec_context, audio_parameters);
-    
+
     return media;
 }
 
 static
 void
 pnk_media_release(
-    PNK_Media* const media)
+    PnkMedia* const media)
 {
     avformat_close_input(&media->context);
     avcodec_free_context(&media->video_codec_context);
@@ -105,9 +105,9 @@ pnk_media_release(
 }
 
 [[nodiscard]] static
-PNK_ScalingContext
+PnkScalingContext
 pnk_media_scaling_context_acquire(
-    PNK_Media const*   const media,
+    PnkMedia const*    const media,
     int                const width,
     int                const height,
     enum AVPixelFormat const format,
@@ -122,8 +122,14 @@ pnk_media_scaling_context_acquire(
         scaled_frame->data, scaled_frame->linesize,
         width, height, format, 1024);
 
+    struct FrameData {
+        int                width;
+        int                height;
+        enum AVPixelFormat format;
+    };
+    
     int const index = media->video_codec_index;
-    AVFrame* source_frame = &(AVFrame){
+    struct FrameData* source_frame = &(struct FrameData){
         .width  = media->context->streams[index]->codecpar->width,
         .height = media->context->streams[index]->codecpar->height,
         .format = media->video_codec_context->pix_fmt
@@ -134,7 +140,7 @@ pnk_media_scaling_context_acquire(
         scaled_frame->width, scaled_frame->height, scaled_frame->format,
         flags, nullptr, nullptr, nullptr);
     
-    return (PNK_ScalingContext){
+    return (PnkScalingContext){
         .sws_context  = sws_context,
         .scaled_frame = scaled_frame
     };
@@ -143,7 +149,7 @@ pnk_media_scaling_context_acquire(
 static
 void
 pnk_media_scaling_context_release(
-    PNK_ScalingContext scaling_context)
+    PnkScalingContext scaling_context)
 {
     sws_freeContext(scaling_context.sws_context);
     av_freep(&scaling_context.scaled_frame->data[0]);
@@ -153,9 +159,9 @@ pnk_media_scaling_context_release(
 [[nodiscard]] static
 int
 pnk_media_decode_and_process(
-    PNK_Media const*    const media,
-    PNK_FrameProcessor        callback,
-    void*               const userdata)
+    PnkMedia const*   const restrict media,
+    void*             const restrict userdata,
+    PnkFrameProcessor                callback)
 {
     int const video_error = avcodec_open2(
         media->video_codec_context, media->video_codec, nullptr);
@@ -181,6 +187,10 @@ pnk_media_decode_and_process(
             while (avcodec_receive_frame(media->video_codec_context, frame) >= 0)
             {
                 callback(frame, userdata);
+                // FIXME:
+                // I realized I might need this to not leak memory?
+                // I feel like I'm missing this in other places as well?
+                av_frame_unref(frame);
             }
             av_packet_unref(packet);
         }
@@ -207,4 +217,4 @@ pnk_media_decode_and_process(
 ** GNU General Public License for more details.
 **
 ** You should have received a copy of the GNU General Public License
-** along with this program.  If not, see <https://www.gnu.org/licenses/>. */
+** along with this program. If not, see <https://www.gnu.org/licenses/>. */

@@ -92,10 +92,10 @@ static float const densities[128] = {
 };
 
 void callback(
-    AVFrame* const source_frame,
-    void*    const user_data)
+    AVFrame* const restrict source_frame,
+    void*    const restrict user_data)
 {
-    PNK_ScalingContext* const scaling_context = user_data;
+    PnkScalingContext* const scaling_context = user_data;
 
     auto const sws_context  = scaling_context->sws_context;
     auto const scaled_frame = scaling_context->scaled_frame;
@@ -142,7 +142,7 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    PNK_Media media = pnk_media_acquire(argv[1]);
+    PnkMedia media = pnk_media_acquire(argv[1]);
     if (media.error < 0)
     {
         printf("Error opening '%s': %s.", argv[1], av_err2str(media.error));
@@ -151,11 +151,11 @@ int main(int argc, char* argv[])
 
     setvbuf(stdout, NULL, _IOFBF, 65536);
 
-    PNK_ScalingContext scaling_context = pnk_media_scaling_context_acquire(
+    PnkScalingContext scaling_context = pnk_media_scaling_context_acquire(
         &media, RESOLUTION_W, RESOLUTION_H, AV_PIX_FMT_RGB24, SWS_AREA);
 
     int const error = pnk_media_decode_and_process(
-        &media, &callback, &scaling_context);
+        &media, &scaling_context, &callback);
     
     if (error < 0)
     {
@@ -179,4 +179,4 @@ int main(int argc, char* argv[])
 ** GNU General Public License for more details.
 **
 ** You should have received a copy of the GNU General Public License
-** along with this program.  If not, see <https://www.gnu.org/licenses/>. */
+** along with this program. If not, see <https://www.gnu.org/licenses/>. */
