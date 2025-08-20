@@ -45,9 +45,15 @@ static int                pnk_media_decode_and_process      (PnkMedia const*   r
 
 #endif /* PNK_MEDIA_FACADE_HEADER */
 
-#ifdef PNK_MEDIA_FACADE_SOURCE
+#if defined(PNK_MEDIA_FACADE_IMPLEMENTATION) ||   \
+    defined(PNK_MEDIA_FACADE_IMPLEMENTATION_STATIC)
 
-PNK_NODISCARD static
+#ifdef PNK_MEDIA_FACADE_IMPLEMENTATION_STATIC
+    #define PNK_DEFINITION static inline
+#else
+    #define PNK_DEFINITION
+#endif
+
 PnkMedia
 pnk_media_acquire(
     char const* const path)
@@ -96,7 +102,7 @@ pnk_media_acquire(
     return media;
 }
 
-static
+PNK_DEFINITION
 void
 pnk_media_release(
     PnkMedia* const media)
@@ -106,7 +112,7 @@ pnk_media_release(
     avcodec_free_context(&media->audio_codec_context);
 }
 
-PNK_NODISCARD static
+PNK_NODISCARD PNK_DEFINITION
 PnkScalingContext
 pnk_media_scaling_context_acquire(
     PnkMedia const*    const media,
@@ -148,7 +154,7 @@ pnk_media_scaling_context_acquire(
     };
 }
 
-static
+PNK_DEFINITION
 void
 pnk_media_scaling_context_release(
     PnkScalingContext scaling_context)
@@ -158,7 +164,7 @@ pnk_media_scaling_context_release(
     av_frame_free(&scaling_context.scaled_frame);
 }
 
-PNK_NODISCARD static
+PNK_NODISCARD PNK_DEFINITION
 int
 pnk_media_decode_and_process(
     PnkMedia const*   const restrict media,
@@ -204,6 +210,7 @@ pnk_media_decode_and_process(
     return 0;
 }
 
+#undef PNK_DEFINITION
 #endif /* PNK_MEDIA_FACADE_SOURCE */
 /* pnk-pkv - a terminal ASCII video player
 ** Copyright (C) 2025 Hrvoje 'Hurubon' Žohar

@@ -7,7 +7,7 @@
 #include <libavutil/frame.h>
 #include <libswscale/swscale.h>
 
-#define PNK_MEDIA_FACADE_SOURCE
+#define PNK_MEDIA_FACADE_IMPLEMENTATION_STATIC
 #include <pnk/media_facade.h>
 #include <pnk/c23_compatibility.h>
 
